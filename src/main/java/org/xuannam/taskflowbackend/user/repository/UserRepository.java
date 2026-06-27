@@ -1,4 +1,12 @@
 package org.xuannam.taskflowbackend.user.repository;
 
-public interface UserRepository extends org.springframework.data.jpa.repository.JpaRepository<org.xuannam.taskflowbackend.user.entity.UserEntity, java.lang.Long> {
-  }
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.xuannam.taskflowbackend.user.entity.UserEntity;
+
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByEmail(String email);
+    boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
+}

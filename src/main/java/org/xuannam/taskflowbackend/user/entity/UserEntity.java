@@ -7,9 +7,6 @@ import org.xuannam.taskflowbackend.common.entity.AbstractEntity;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "users")

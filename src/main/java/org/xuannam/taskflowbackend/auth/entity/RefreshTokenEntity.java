@@ -9,9 +9,6 @@ import java.time.Instant;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "refresh_tokens")

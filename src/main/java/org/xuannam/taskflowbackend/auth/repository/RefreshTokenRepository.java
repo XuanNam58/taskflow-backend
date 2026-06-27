@@ -1,4 +1,12 @@
 package org.xuannam.taskflowbackend.auth.repository;
 
-public interface RefreshTokenRepository extends org.springframework.data.jpa.repository.JpaRepository<org.xuannam.taskflowbackend.auth.entity.RefreshTokenEntity, java.lang.Long> {
-  }
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.xuannam.taskflowbackend.auth.entity.RefreshTokenEntity;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, Long> {
+    Optional<RefreshTokenEntity> findByToken(String token);
+    List<RefreshTokenEntity> findByUserIdAndRevokedFalse(Long userId);
+}
