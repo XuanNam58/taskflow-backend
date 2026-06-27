@@ -1,0 +1,46 @@
+package org.xuannam.taskflowbackend.auth.service.impl;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
+import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
+import org.xuannam.taskflowbackend.auth.service.AuthService;
+import org.xuannam.taskflowbackend.common.exception.BusinessException;
+import org.xuannam.taskflowbackend.common.exception.ErrorCode;
+import org.xuannam.taskflowbackend.user.entity.UserEntity;
+import org.xuannam.taskflowbackend.user.mapper.UserMapper;
+import org.xuannam.taskflowbackend.user.repository.UserRepository;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class AuthServiceImpl implements AuthService {
+    PasswordEncoder passwordEncoder;
+    UserRepository userRepository;
+    UserMapper userMapper;
+    
+    @Transactional
+    @Override
+    public RegisterResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+        
+        if (userRepository.existsByUsername(request.username())) {
+            throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+
+        UserEntity user = new UserEntity();
+        user.setEmail(request.email());
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setEnabled(true);
+        
+        UserEntity savedUser =userRepository.save(user);
+        return userMapper.toRegisterResponse(savedUser);
+    }
+}
