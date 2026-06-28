@@ -6,7 +6,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
+import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
 import org.xuannam.taskflowbackend.auth.service.AuthService;
 import org.xuannam.taskflowbackend.common.exception.BusinessException;
@@ -42,5 +44,19 @@ public class AuthServiceImpl implements AuthService {
         
         UserEntity savedUser =userRepository.save(user);
         return userMapper.toRegisterResponse(savedUser);
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        UserEntity user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_EXIST));
+        
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+        
+        return LoginResponse.builder()
+                .accessToken()
+                .build();
     }
 }
