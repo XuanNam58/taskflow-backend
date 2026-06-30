@@ -19,3 +19,9 @@ spring:
 logging:
   level:
     org.flywaydb: INFO
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    access-token-expiration: ${APP_JWT_ACCESS_TOKEN_EXPIRATION:15m}
+    refresh-token-expiration: ${APP_JWT_REFRESH_TOKEN_EXPIRATION:30d}
