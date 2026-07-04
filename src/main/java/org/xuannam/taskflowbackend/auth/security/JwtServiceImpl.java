@@ -3,26 +3,31 @@ package org.xuannam.taskflowbackend.auth.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.xuannam.taskflowbackend.user.entity.UserEntity;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 
 @Service
-@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class JwtServiceImpl implements JwtService {
     
     JwtProperties jwtProperties;
-    
+    SecretKey signingKey;
+
+    public JwtServiceImpl(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        this.signingKey = Keys.hmacShaKeyFor(
+                jwtProperties.secret().getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
     @Override
     public String generateAccessToken(UserEntity user) {
         Instant now = Instant.now();
@@ -31,40 +36,17 @@ public class JwtServiceImpl implements JwtService {
                 .subject(String.valueOf(user.getId()))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
-                .signWith(getSigningKey())
+                .signWith(signingKey)
                 .compact();
     }
 
     @Override
-    public String generateRefreshToken() {
-        return "";
+    public boolean validateAccessToken(String token) {
+        return false;
     }
 
     @Override
-    public boolean validateToken(String token) {
-        try {
-            parseClaims(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException ex) {
-            return false;
-        }
-    }
-
-    @Override
-    public Long getUserIdFromToken(String token) {
+    public Long extractUserId(String token) {
         return 0L;
-    }
-    
-    private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-    
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtProperties.secret().getBytes(StandardCharsets.UTF_8);
-        return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 }

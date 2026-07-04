@@ -10,7 +10,11 @@ import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
+import org.xuannam.taskflowbackend.auth.repository.RefreshTokenRepository;
+import org.xuannam.taskflowbackend.auth.security.JwtProperties;
+import org.xuannam.taskflowbackend.auth.security.JwtService;
 import org.xuannam.taskflowbackend.auth.service.AuthService;
+import org.xuannam.taskflowbackend.auth.service.RefreshTokenService;
 import org.xuannam.taskflowbackend.common.exception.BusinessException;
 import org.xuannam.taskflowbackend.common.exception.ErrorCode;
 import org.xuannam.taskflowbackend.user.entity.UserEntity;
@@ -24,7 +28,11 @@ public class AuthServiceImpl implements AuthService {
     PasswordEncoder passwordEncoder;
     UserRepository userRepository;
     UserMapper userMapper;
-    
+    JwtService jwtService;
+    JwtProperties jwtProperties;
+    RefreshTokenService refreshTokenService;
+    RefreshTokenRepository refreshTokenRepository;
+
     @Transactional
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -42,21 +50,26 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setEnabled(true);
         
-        UserEntity savedUser =userRepository.save(user);
+        UserEntity savedUser = userRepository.save(user);
         return userMapper.toRegisterResponse(savedUser);
     }
 
+    @Transactional
     @Override
     public LoginResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_EXIST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
         
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
         
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.create(user.getId());
+        
         return LoginResponse.builder()
-                .accessToken()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 }

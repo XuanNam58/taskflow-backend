@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
+import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
 import org.xuannam.taskflowbackend.auth.service.AuthService;
 
@@ -24,5 +26,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody @Valid RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+    
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+        return ResponseEntity.ok().body(authService.login(request));
     }
 }
