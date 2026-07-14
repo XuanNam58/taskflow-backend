@@ -42,11 +42,25 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public boolean validateAccessToken(String token) {
-        return false;
+        try {
+            parseClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     @Override
     public Long extractUserId(String token) {
-        return 0L;
+        Claims claims = parseClaims(token);
+        return Long.valueOf(claims.getSubject());
+    }
+    
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
