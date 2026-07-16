@@ -26,16 +26,23 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     JwtProperties jwtProperties;
     SecureRandom secureRandom = new SecureRandom();
     
+    @Transactional
     @Override
     public String create(Long userId) {
+        return createAndSave(userId);
+    }
+
+    private String createAndSave(Long userId) {
         String token = generateToken();
-        
+
         RefreshTokenEntity entity = new RefreshTokenEntity();
         entity.setUserId(userId);
         entity.setToken(token);
-        entity.setExpiresAt(Instant.now().plus(jwtProperties.refreshTokenExpiration()));
+        entity.setExpiresAt(
+                Instant.now().plus(jwtProperties.refreshTokenExpiration())
+        );
         entity.setRevoked(false);
-        
+
         refreshTokenRepository.save(entity);
         return token;
     }
@@ -56,7 +63,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         
         currentToken.setRevoked(true);
         
-        String newToken = create(currentToken.getUserId());
+        String newToken = createAndSave(currentToken.getUserId());
         return new RefreshTokenRotationResult(
                 currentToken.getUserId(), 
                 newToken
@@ -69,12 +76,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    @Transactional
     @Override
     public void revoke(String token) {
         RefreshTokenEntity refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
         refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
     }
 
     @Override
