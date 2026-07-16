@@ -6,10 +6,14 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.xuannam.taskflowbackend.auth.dto.RefreshTokenRotationResult;
 import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
+import org.xuannam.taskflowbackend.auth.dto.request.RefreshTokenRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
+import org.xuannam.taskflowbackend.auth.dto.response.RefreshTokenResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
+import org.xuannam.taskflowbackend.auth.entity.RefreshTokenEntity;
 import org.xuannam.taskflowbackend.auth.repository.RefreshTokenRepository;
 import org.xuannam.taskflowbackend.auth.security.JwtProperties;
 import org.xuannam.taskflowbackend.auth.security.JwtService;
@@ -70,6 +74,26 @@ public class AuthServiceImpl implements AuthService {
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .build();
+    }
+
+    @Override
+    public RefreshTokenResponse refresh(RefreshTokenRequest request) {
+        RefreshTokenRotationResult rotation = refreshTokenService.rotate(request.refreshToken());
+
+        UserEntity user = userRepository.findById(rotation.userId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
+        
+        if (!user.isEnabled()) {
+            throw new BusinessException(ErrorCode.USER_DISABLED);
+        }
+        
+        String accessToken = jwtService.generateAccessToken(user);
+        
+        
+        return RefreshTokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(rotation.newRefreshToken())
                 .build();
     }
 }

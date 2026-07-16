@@ -17,10 +17,10 @@ public enum ErrorCode {
     INVALID_CREDENTIALS("AUTH_001", "Invalid email or password", HttpStatus.UNAUTHORIZED),
     INVALID_ACCESS_TOKEN("AUTH_002", "Invalid access token", HttpStatus.UNAUTHORIZED),
     ACCESS_TOKEN_EXPIRED("AUTH_003", "Access token has expired", HttpStatus.UNAUTHORIZED),
-    REFRESH_TOKEN_EXPIRED("AUTH_004", "Refresh token has expired", HttpStatus.UNAUTHORIZED),
-
-    REFRESH_TOKEN_REVOKED("AUTH_005", "Refresh token has been revoked", HttpStatus.UNAUTHORIZED),
-    USER_DISABLED("AUTH_006", "User has been disabled", HttpStatus.FORBIDDEN),
+    INVALID_REFRESH_TOKEN("AUTH_004", "Invalid refresh token", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED("AUTH_005", "Refresh token has expired", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_REVOKED("AUTH_006", "Refresh token has been revoked", HttpStatus.UNAUTHORIZED),
+    USER_DISABLED("AUTH_007", "User has been disabled", HttpStatus.FORBIDDEN),
 
     // ===== Authorization =====
     ACCESS_DENIED("SECURITY_001", "Access denied", HttpStatus.FORBIDDEN),
