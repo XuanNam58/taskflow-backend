@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.xuannam.taskflowbackend.auth.dto.RefreshTokenRotationResult;
 import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
+import org.xuannam.taskflowbackend.auth.dto.request.LogoutRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RefreshTokenRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
@@ -95,5 +96,10 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(rotation.newRefreshToken())
                 .build();
+    }
+
+    @Override
+    public void logout(LogoutRequest request) {
+        refreshTokenService.revoke(request.refreshToken());
     }
 }

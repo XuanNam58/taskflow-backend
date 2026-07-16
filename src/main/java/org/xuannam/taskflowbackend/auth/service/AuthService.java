@@ -1,6 +1,7 @@
 package org.xuannam.taskflowbackend.auth.service;
 
 import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
+import org.xuannam.taskflowbackend.auth.dto.request.LogoutRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RefreshTokenRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
@@ -11,4 +12,5 @@ public interface AuthService {
     RegisterResponse register(RegisterRequest request);
     LoginResponse login(LoginRequest request);
     RefreshTokenResponse refresh(RefreshTokenRequest request);
+    void logout(LogoutRequest request);
 }
