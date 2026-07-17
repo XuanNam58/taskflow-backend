@@ -91,6 +91,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public void revokeAll(Long userId) {
-
+        refreshTokenRepository.revokeAllByUserId(userId);
     }
 }

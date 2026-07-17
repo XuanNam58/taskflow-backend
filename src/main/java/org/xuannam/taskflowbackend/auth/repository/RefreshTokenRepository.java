@@ -3,6 +3,7 @@ package org.xuannam.taskflowbackend.auth.repository;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.xuannam.taskflowbackend.auth.entity.RefreshTokenEntity;
 
@@ -20,4 +21,13 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
             where token.token = :token           
             """)
     Optional<RefreshTokenEntity> findByTokenForUpdate(String token);
+    
+    @Modifying
+    @Query("""
+        update RefreshTokenEntity token
+        set token.revoked = true
+        where token.userId = :userId
+            and token.revoked = false
+        """)
+    int revokeAllByUserId(Long userId);
 }

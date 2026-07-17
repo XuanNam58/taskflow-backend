@@ -3,7 +3,7 @@ package org.xuannam.taskflowbackend.auth.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.xuannam.taskflowbackend.common.entity.AbstractEntity;
+import org.xuannam.taskflowbackend.common.entity.BaseEntity;
 
 import java.time.Instant;
 
@@ -12,7 +12,7 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "refresh_tokens")
-public class RefreshTokenEntity extends AbstractEntity {
+public class RefreshTokenEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)

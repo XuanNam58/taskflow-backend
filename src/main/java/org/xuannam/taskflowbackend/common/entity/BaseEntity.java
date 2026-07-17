@@ -11,7 +11,7 @@ import java.time.Instant;
 @MappedSuperclass
 @Getter
 @Setter
-public abstract class AbstractEntity {
+public abstract class BaseEntity {
     @CreationTimestamp
     Instant createdAt;
     @UpdateTimestamp

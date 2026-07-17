@@ -102,4 +102,10 @@ public class AuthServiceImpl implements AuthService {
     public void logout(LogoutRequest request) {
         refreshTokenService.revoke(request.refreshToken());
     }
+
+    @Transactional
+    @Override
+    public void logoutAll(Long userId) {
+        refreshTokenService.revokeAll(userId);
+    }
 }
