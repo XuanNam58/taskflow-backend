@@ -1,0 +1,15 @@
+# src/test/resources/application-test.yml
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+app:
+  jwt:
+    secret: test-secret-key-that-must-be-long-enough-for-hmac-sha-256-testing
+    access-token-expiration: 15m
+    refresh-token-expiration: 30d
