@@ -1,0 +1,101 @@
+# TaskFlow auth flow — IntelliJ HTTP Client
+#
+# Run a single request with Ctrl+Enter, or run the whole file top to bottom.
+# Login and Refresh capture their tokens automatically, so no token is ever pasted by hand.
+#
+# The app must be running. Requires APP_JWT_SECRET (at least 32 characters — HS256 rejects
+# anything shorter) and PostgreSQL on localhost:5432/taskflow.
+
+@host = http://localhost:8080
+
+### Register
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "nam@example.com",
+  "username": "xuannam",
+  "password": "Password123"
+}
+
+### Login — captures both tokens
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nam@example.com",
+  "password": "Password123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+### Current user
+GET {{host}}/api/users/me
+Authorization: Bearer {{accessToken}}
+
+### Rotate refresh token — captures the new pair
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    // Keep the token we just spent — the reuse test at the bottom needs it.
+    client.global.set("oldRefreshToken", client.global.get("refreshToken"));
+    client.global.set("accessToken", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+### Logout current device
+POST {{host}}/api/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout all devices
+POST {{host}}/api/auth/logout-all
+Authorization: Bearer {{accessToken}}
+
+
+# ---------------------------------------------------------------------------
+# Bug hunting. Each request below should return a clean 401 with the error code
+# named in the comment. Compare what you actually get against what you designed
+# in ErrorCode and JwtAuthenticationEntryPoint.
+# ---------------------------------------------------------------------------
+
+### No token at all — expect 401 AUTH_002
+GET {{host}}/api/users/me
+
+### Malformed token — expect 401 AUTH_002
+GET {{host}}/api/users/me
+Authorization: Bearer not-a-jwt
+
+### Valid shape, wrong signature — expect 401 AUTH_002
+# Header and payload are real, the signature is not.
+GET {{host}}/api/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjk5OTk5OTk5OTl9.wrong_signature_here
+
+### Expired token — expect 401 AUTH_003
+# Restart the app with APP_JWT_ACCESS_TOKEN_EXPIRATION=10s, run Login above,
+# wait ten seconds, then run this.
+GET {{host}}/api/users/me
+Authorization: Bearer {{accessToken}}
+
+### Reusing an already-rotated refresh token — expect 401 AUTH_005
+# Run Login, then Refresh, then this. It replays oldRefreshToken, the token that
+# Refresh already revoked. Ask yourself the harder question afterwards: the token
+# it replaced is still valid. Should it be?
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{oldRefreshToken}}"
+}

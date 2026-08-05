@@ -1,0 +1,307 @@
+{
+  "info": {
+    "name": "TaskFlow — Auth",
+    "description": "Auth flow for taskflow-backend. Login and Refresh capture their tokens automatically into collection variables, so no token is ever pasted by hand.\n\nRequires the app running on localhost:8080 with APP_JWT_SECRET set (at least 32 characters).\n\nThe 'Bug hunting' folder contains failing specs: its tests assert the behaviour the code is supposed to have, and they fail against the current implementation. That is intentional.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "host", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "oldRefreshToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{host}}/api/auth/register", "host": ["{{host}}"], "path": ["api", "auth", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nam@example.com\",\n  \"username\": \"xuannam\",\n  \"password\": \"Password123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('registers or reports a conflict', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{host}}/api/auth/login", "host": ["{{host}}"], "path": ["api", "auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nam@example.com\",\n  \"password\": \"Password123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('login succeeds', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', body.accessToken);",
+              "pm.collectionVariables.set('refreshToken', body.refreshToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Current user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{host}}/api/users/me", "host": ["{{host}}"], "path": ["api", "users", "me"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns the current user', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.json().email).to.eql('nam@example.com');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refresh (rotate)",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{host}}/api/auth/refresh", "host": ["{{host}}"], "path": ["api", "auth", "refresh"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('rotation succeeds', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Keep the token we just spent — the reuse test needs it.",
+              "pm.collectionVariables.set('oldRefreshToken', pm.collectionVariables.get('refreshToken'));",
+              "",
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', body.accessToken);",
+              "pm.collectionVariables.set('refreshToken', body.refreshToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout current device",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{host}}/api/auth/logout", "host": ["{{host}}"], "path": ["api", "auth", "logout"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Logout all devices",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{host}}/api/auth/logout-all", "host": ["{{host}}"], "path": ["api", "auth", "logout-all"] }
+      }
+    },
+    {
+      "name": "Bug hunting",
+      "description": "Every test in this folder asserts the behaviour the code was designed to have. Several fail today. Run the folder and read which assertion breaks — the failing assertion is the bug report.",
+      "item": [
+        {
+          "name": "No token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{host}}/api/users/me", "host": ["{{host}}"], "path": ["api", "users", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 with AUTH_002', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().code).to.eql('AUTH_002');",
+                  "});",
+                  "",
+                  "pm.test('path is the endpoint that was called', function () {",
+                  "    pm.expect(pm.response.json().path).to.eql('/api/users/me');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Malformed token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer not-a-jwt" }],
+            "url": { "raw": "{{host}}/api/users/me", "host": ["{{host}}"], "path": ["api", "users", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 with AUTH_002', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().code).to.eql('AUTH_002');",
+                  "});",
+                  "",
+                  "// This one fails today. The exception escapes the filter, Tomcat forwards",
+                  "// to /error, and the security chain answers the forwarded request instead.",
+                  "pm.test('path is the endpoint that was called', function () {",
+                  "    pm.expect(pm.response.json().path).to.eql('/api/users/me');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wrong signature",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjk5OTk5OTk5OTl9.wrong_signature_here"
+              }
+            ],
+            "url": { "raw": "{{host}}/api/users/me", "host": ["{{host}}"], "path": ["api", "users", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 with AUTH_002', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().code).to.eql('AUTH_002');",
+                  "});",
+                  "",
+                  "pm.test('path is the endpoint that was called', function () {",
+                  "    pm.expect(pm.response.json().path).to.eql('/api/users/me');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expired token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{host}}/api/users/me", "host": ["{{host}}"], "path": ["api", "users", "me"] },
+            "description": "Restart the app with APP_JWT_ACCESS_TOKEN_EXPIRATION=10s, run Login, wait ten seconds, then send this."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "// Both of these fail today. Note that the status assertion above passes —",
+                  "// asserting only the status would hide the bug completely.",
+                  "pm.test('reports ACCESS_TOKEN_EXPIRED, not a generic invalid token', function () {",
+                  "    pm.expect(pm.response.json().code).to.eql('AUTH_003');",
+                  "});",
+                  "",
+                  "pm.test('path is the endpoint that was called', function () {",
+                  "    pm.expect(pm.response.json().path).to.eql('/api/users/me');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reuse a rotated refresh token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{host}}/api/auth/refresh", "host": ["{{host}}"], "path": ["api", "auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{oldRefreshToken}}\"\n}"
+            },
+            "description": "Run Login, then Refresh, then this. It replays the token that rotation already revoked."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('a revoked token is rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().code).to.eql('AUTH_005');",
+                  "});",
+                  "",
+                  "// The harder question: replaying a stolen token is a theft signal.",
+                  "// Right now the token that replaced it stays valid. Should it?"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
