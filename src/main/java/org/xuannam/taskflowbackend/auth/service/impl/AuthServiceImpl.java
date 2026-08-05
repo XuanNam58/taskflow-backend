@@ -64,6 +64,10 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+
+        if (!user.isEnabled()) {
+            throw new BusinessException(ErrorCode.USER_DISABLED);
+        }
         
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
