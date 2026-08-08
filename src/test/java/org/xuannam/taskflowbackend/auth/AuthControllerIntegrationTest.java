@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.xuannam.taskflowbackend.AbstractIntegrationTest;
+import org.xuannam.taskflowbackend.auth.dto.request.LoginRequest;
 import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.repository.RefreshTokenRepository;
 import org.xuannam.taskflowbackend.user.entity.UserEntity;
@@ -32,6 +33,15 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     void cleanDatabase() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    UserEntity createDisabledUser() {
+        UserEntity user = new UserEntity();
+        user.setEmail("nam@gmail.com");
+        user.setUsername("xuannam");
+        user.setPassword(passwordEncoder.encode("12345678"));
+        user.setEnabled(false);
+        return userRepository.save(user);
     }
     
     @Nested
@@ -85,5 +95,27 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                     .andExpect(jsonPath("$.code")
                             .value("USERNAME_ALREADY_EXISTS"));
         }
+    }
+    
+    @Nested
+    @DisplayName("POST /api/auth/login")
+    class Login {
+        
+        @Test
+        @DisplayName("should reject disabled user")
+        void shouldRejectDisabledUser() throws Exception {
+            createDisabledUser();
+            LoginRequest request = new LoginRequest(
+                    "nam@gmail.com",
+                    "12345678"
+            );
+            
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(status().isForbidden(),
+                            jsonPath("$.code").value("AUTH_007"));
+        }
+        
     }
 }

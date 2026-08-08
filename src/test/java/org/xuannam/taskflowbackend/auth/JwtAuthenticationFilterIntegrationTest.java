@@ -37,7 +37,7 @@ public class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationT
         userRepository.deleteAll();
     }
 
-    UserEntity createUser() {
+    UserEntity createEnabledUser() {
         UserEntity user = new UserEntity();
         user.setEmail("nam@gmail.com");
         user.setUsername("xuannam");
@@ -53,7 +53,7 @@ public class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationT
         @DisplayName("should return /api/users/me in path")
         void shouldRejectExpiredAccessToken() throws Exception {
 
-            UserEntity user = createUser();
+            UserEntity user = createEnabledUser();
             JwtProperties jwtPropertiesWithShortExpiration = new JwtProperties(
                     jwtProperties.secret(),
                     Duration.ofSeconds(-1),
