@@ -14,7 +14,6 @@ import org.xuannam.taskflowbackend.auth.dto.request.RegisterRequest;
 import org.xuannam.taskflowbackend.auth.dto.response.LoginResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RefreshTokenResponse;
 import org.xuannam.taskflowbackend.auth.dto.response.RegisterResponse;
-import org.xuannam.taskflowbackend.auth.entity.RefreshTokenEntity;
 import org.xuannam.taskflowbackend.auth.repository.RefreshTokenRepository;
 import org.xuannam.taskflowbackend.auth.security.JwtProperties;
 import org.xuannam.taskflowbackend.auth.security.JwtService;
@@ -65,12 +64,12 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
-        if (!user.isEnabled()) {
-            throw new BusinessException(ErrorCode.USER_DISABLED);
-        }
-        
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        if (!user.isEnabled()) {
+            throw new BusinessException(ErrorCode.USER_DISABLED);
         }
         
         String accessToken = jwtService.generateAccessToken(user);
