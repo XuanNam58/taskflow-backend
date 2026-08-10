@@ -43,6 +43,15 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         user.setEnabled(false);
         return userRepository.save(user);
     }
+
+    UserEntity createValidUser() {
+        UserEntity user = new UserEntity();
+        user.setEmail("nam@gmail.com");
+        user.setUsername("xuannam");
+        user.setPassword(passwordEncoder.encode("12345678"));
+        user.setEnabled(true);
+        return userRepository.save(user);
+    }
     
     @Nested
     @DisplayName("POST /api/auth/register")
@@ -82,8 +91,10 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("should reject duplicate email")
         void shouldRejectDuplicateEmail() throws Exception {
+            createValidUser();
+            
             RegisterRequest request = new RegisterRequest(
-                    "nam@example.com",
+                    "nam@gmail.com",
                     "namdang",
                     "12345678"
             );
@@ -93,7 +104,7 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.code")
-                            .value("USERNAME_ALREADY_EXISTS"));
+                            .value("USER_001"));
         }
     }
     
