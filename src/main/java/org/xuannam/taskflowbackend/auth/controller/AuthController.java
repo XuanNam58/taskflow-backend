@@ -42,8 +42,8 @@ public class AuthController {
     
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(@RequestBody @Valid LogoutRequest request) {
-        authService.logout(request);
+    public void logout(@RequestBody @Valid LogoutRequest request, @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        authService.logout(request, authenticatedUser.userId());
     }
     
     @PostMapping("/logout-all")

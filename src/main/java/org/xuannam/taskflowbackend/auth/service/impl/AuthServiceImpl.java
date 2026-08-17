@@ -81,6 +81,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Transactional
     @Override
     public RefreshTokenResponse refresh(RefreshTokenRequest request) {
         RefreshTokenRotationResult rotation = refreshTokenService.rotate(request.refreshToken());
@@ -102,8 +103,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(LogoutRequest request) {
-        refreshTokenService.revoke(request.refreshToken());
+    public void logout(LogoutRequest request, Long userId) {
+        refreshTokenService.revoke(request.refreshToken(), userId);
     }
 
     @Transactional

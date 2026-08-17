@@ -78,9 +78,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Transactional
     @Override
-    public void revoke(String token) {
+    public void revoke(String token, Long userId) {
         RefreshTokenEntity refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
+        
+        if (!userId.equals(refreshToken.getUserId())) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
         
         if (refreshToken.isRevoked()) {
             return;
