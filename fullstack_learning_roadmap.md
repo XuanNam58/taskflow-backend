@@ -3,9 +3,9 @@
 **Owner:** Xuân Nam Đặng  
 **Target:** Middle Full-Stack Developer  
 **Primary stack:** Java, Spring Boot, PostgreSQL, Angular  
-**Roadmap version:** 1.1  
+**Roadmap version:** 1.2  
 **Created:** 2026-07-18  
-**Last reviewed:** 2026-08-01  
+**Last reviewed:** 2026-08-09  
 **Review cadence:** After each milestone or every 4 weeks
 
 ---
@@ -1103,61 +1103,73 @@ unnoticed.
 
 ## Done and proven by a test
 
+As of 2026-08-09: 10 tests across 3 integration-test classes, suite green.
+
 - Backend project setup.
 - PostgreSQL and Flyway foundation.
-- Testcontainers integration-test foundation (`AbstractIntegrationTest`).
-- User registration — happy path only.
+- Testcontainers integration-test foundation — singleton container shared across all test classes.
+- User registration, including the duplicate-email conflict.
+- Login: rejects a disabled account, and returns both tokens for a valid one.
+- JWT authentication filter: an expired access token returns `AUTH_003` at the correct path.
+- Refresh-token rotation: issues a new pair and revokes the old token.
+- Refresh by a disabled user is rejected **and rolls back**, leaving the old token usable.
+- Logout cannot revoke another user's refresh token.
+- Logout revokes the token, and reusing it afterwards fails.
 
-## Written but not proven, and carrying known defects
+## Defects fixed in this milestone
 
-Each item was verified against the code on 2026-08-01. Line numbers refer to the state at that date.
+Four of the six defects found on 2026-08-01 are closed, each with a test that failed first.
 
-| Feature | Defect |
+| Defect | Fix |
 |---|---|
-| JWT authentication filter | `JwtAuthenticationFilter:55` catches only `IllegalArgumentException` and `AuthenticationException`; jjwt throws `JwtException` subclasses, which escape the filter. Expired tokens never return the designed `ACCESS_TOKEN_EXPIRED` response, and the `ExpiredJwtException` branch in `JwtAuthenticationEntryPoint:29` is unreachable. |
-| Login | `AuthServiceImpl:64-79` never checks `user.isEnabled()`. A disabled user receives a full token pair. |
-| Refresh-token persistence | `RefreshTokenServiceImpl:40` stores tokens in plaintext. Should be SHA-256 hashed — the token is a 64-byte random value, not a password, so BCrypt is the wrong tool. |
-| Refresh-token rotation | `AuthServiceImpl:81-99` is not `@Transactional`. Rotation commits, then a later step can throw, leaving the old token revoked and the new one never delivered. No reuse detection. |
-| Logout current device | `RefreshTokenServiceImpl:81-90` never verifies the token belongs to the caller. |
-| Global exception handling | `GlobalExceptionHandler:24` discards the custom message from the two-argument `BusinessException` constructor. The catch-all handler logs nothing; the codebase has no logger at all. |
-| Current-user endpoint | Untested. |
-| Logout all devices | Untested. |
-| Validation | Email is not normalised before the uniqueness check, so `A@x.com` and `a@x.com` become separate accounts. |
+| `JwtException` escaped the authentication filter, so expired tokens returned `AUTH_002` with `path=/error` and the `ACCESS_TOKEN_EXPIRED` branch was unreachable | caught in the filter's catch clause (PR #4) |
+| Login accepted a disabled account | `isEnabled()` checked **after** password verification, so a disabled account is not revealed to someone without the password (PR #6) |
+| `refresh` was not transactional, so a failure after rotation left the old token revoked and the new one undelivered | `@Transactional` on `AuthServiceImpl.refresh` |
+| `revoke` never verified token ownership | `logout` now takes the caller's id from `@AuthenticationPrincipal` and returns `AUTH_004` rather than confirming the token exists |
 
-## Not started
+## Backlog — carried, not forgotten
 
-- Password change.
-- Forgot / reset password.
-- Email verification.
-- Docker Compose (required by the Phase 1 exit criteria).
-- CI pipeline.
-- OpenAPI / Swagger documentation (required by the Phase 10 portfolio list).
+**Gated: must be done before the first public deployment.**
+
+- Hash refresh tokens with SHA-256. Stored in plaintext today, so a database dump is every live session.
+  SHA-256 rather than BCrypt: the token is already 512 bits of entropy, and BCrypt's per-row salt would
+  make lookup by hash impossible. Needs a Flyway migration; existing rows cannot be converted, so they
+  are truncated and everyone logs in again.
+- Refresh-token reuse detection (RFC 9700). Open design question: revoke per-user (reuse the existing
+  `revokeAllByUserId`, no migration) or per-token-family (`family_id` column, needs a migration). Note
+  that concurrent refresh from two browser tabs is normal and would trip naive detection, so a short
+  grace window is likely needed.
+- `docker-compose.yml` — required by the Phase 1 exit criteria.
+
+**Refactor, no deadline.** Confine jjwt to `JwtServiceImpl` using the Adapter pattern from Phase 5:
+`parseClaims` translates jjwt exceptions into `BusinessException` carrying an `ErrorCode`, so the filter
+and the entry point stop importing `io.jsonwebtoken` and the fragile
+`getCause() instanceof ExpiredJwtException` check disappears. Chosen deliberately over the one-line fix
+that shipped, to keep the bug fix and the refactor in separate commits. Revisit when touching auth again.
+
+**Still not started.** Password change, forgot/reset password, email verification, CI pipeline,
+OpenAPI documentation, structured logging with a correlation ID.
 
 ## Current milestone
 
-**Authentication integration testing** — in progress, not complete.
+**Angular authentication** — starting 2026-08-10.
 
-Status: the Testcontainers foundation exists and works. Two tests exist; `shouldRejectDuplicateEmail`
-fails because it never seeds a conflicting user, asserts the wrong error code, and asserts the enum name
-instead of the `USER_002` code that the response actually carries. `TaskflowBackendApplicationTests` is
-missing `@ActiveProfiles("test")`, so it requires a live local database.
+The backend auth contract is stable and tested, so the frontend can be built against it:
+`401 AUTH_003` means refresh, `401 AUTH_002` means log out, `403 AUTH_007` means the account is disabled.
+None of the backlog items above change that contract.
 
-Immediate sequence:
+| Target | Scope |
+|---|---|
+| 10–16 Aug | angular.dev Essentials and the interactive tutorial. No TaskFlow code — a framework needs a structured backbone, not ad-hoc questions. |
+| 17–23 Aug | `taskflow-frontend` scaffold. Login page calling the real API, access token stored, one protected route reachable. |
+| 24–31 Aug | `AuthInterceptor`, `AuthGuard`, automatic refresh, current-user state, logout. |
 
-1. Fix the two broken tests.
-2. Write the remaining integration tests listed in the Phase 1 testing milestone.
-3. Fix the defects those tests expose, starting with the JWT filter and the disabled-user check.
-4. Hash refresh tokens and make the refresh flow transactional.
-5. Add Docker Compose to meet the Phase 1 exit criteria.
-6. Start the Angular authentication slice.
+Priority note: joining an Angular project at work is the immediate goal, which is why the backend
+backlog is gated rather than scheduled.
 
 ## Next milestone
 
-**Angular authentication**
-
-Then:
-
-**Workspace vertical slice**
+**Workspace vertical slice** — backend, tests and Angular screens together, per the Phase 4 workflow.
 
 ---
 
