@@ -3,9 +3,9 @@
 **Owner:** Xuân Nam Đặng  
 **Target:** Middle Full-Stack Developer  
 **Primary stack:** Java, Spring Boot, PostgreSQL, Angular  
-**Roadmap version:** 1.2  
+**Roadmap version:** 1.3  
 **Created:** 2026-07-18  
-**Last reviewed:** 2026-08-09  
+**Last reviewed:** 2026-10-17  
 **Review cadence:** After each milestone or every 4 weeks
 
 ---
@@ -38,6 +38,57 @@
   real defects (see the progress board). Added 2026-08-01.
 - Working through pull requests. The repository currently has no branches and no pull requests, which
   the Phase 10 portfolio list requires. Added 2026-08-01.
+- Hands-on Kafka, minimal Kubernetes, and a visible AI-assisted development workflow. All three appear
+  in middle-level postings; see the market check below. Added 2026-10-17.
+- Oracle and PL/SQL, relevant only when targeting banks and finance companies. Added 2026-10-17.
+- English without a measurable target. Added 2026-10-17.
+
+### Market check — 2026-10-17
+
+Added in v1.3. Java job postings in Vietnam were sampled to check this roadmap against what employers
+actually ask for. This is a sample, not a survey: many postings are cross-posted, and salary is hidden
+on most sites.
+
+| Site | Java postings listed | Read |
+|---|---|---|
+| ITviec | 177 | 60 cards, 13 full descriptions |
+| LinkedIn | 440 | 60 cards, 10 full descriptions |
+| Indeed | 600+ | 15 cards (page 2 requires login) |
+| TopCV | 60 | 50 cards with salary and years, 2 full descriptions |
+| VietnamWorks | 42 | 9 cards |
+| TopDev | 19 | 15 cards, 1 full description |
+
+Findings that changed this roadmap:
+
+- **"Middle" in Vietnam means about 2–3 years.** Amaris asks 2.5, UNIT, Sapo, CEVA and Elcom ask 2. The
+  4+ year postings are mostly foreign-owned (DXC, NAB, bbv). Middle within twelve months is realistic,
+  but the portfolio has to compensate for the missing year.
+- **Salary bands seen on TopCV and VietnamWorks:**
+
+  | Experience | Monthly salary (VND) |
+  |---|---|
+  | 1–2 years | 8–20M |
+  | 2 years | 17–40M |
+  | 3 years | 20–50M |
+  | MB Bank Middle/Senior | 26–50M |
+
+- **Docker and CI/CD are baseline**, not a later phase. Required at bbv, ATOMI, ABBANK, Goline.
+- **Kubernetes appears at middle level.** Required at ST Engineering (Middle), CEVA (2+ years), Goline.
+- **Kafka** is required at bbv, Goline, Viettel Post and Elcom, and a plus at four others.
+- **AI means using AI tools, not building AI features.** EPAM requires Copilot or Cursor experience.
+  Shinhan Finance titles a 2-year role "AI-Driven Development" and expects the hire to coach the team.
+  bbv names Claude Code.
+- **Auth depth is asked directly.** Amaris (Junior/Middle) requires token-based security and
+  authorization mechanisms. This makes the gated auth backlog an interview asset, not just a
+  pre-deployment chore.
+- **Hanoi Java hiring is dominated by banks and finance** (MB Bank, VPBank, Shinhan, HD Saison, SFinance,
+  AEON, PVcomBank). Many require Oracle; Amaris calls Oracle and PL/SQL a "big plus".
+- **Angular is confirmed** for Java full-stack at Vietnamese banks (NGS, TTC, MB Bank). React appears
+  mainly at foreign companies (HCL, NAB, ST Engineering, Sapo).
+- **English** appears more often than Kafka. LG CNS sets TOEIC 700+.
+
+Deliberately not added: Quarkus, WSO2/Camel, Backbase, T24, BPM platforms, MongoDB, Go. Each is one
+employer's stack rather than a market signal.
 
 ---
 
@@ -114,6 +165,18 @@ It should be developed as a production-style application rather than a tutorial 
 - 70% building and debugging.
 - 20% reading documentation and studying concepts.
 - 10% notes, summaries, and interview preparation.
+
+### AI-assisted development
+
+Added 2026-10-17. Employers now ask for evidence of working effectively with AI coding tools (EPAM,
+Shinhan Finance, bbv). The skill they want is judgment, not prompting: knowing when generated code is
+wrong and proving it.
+
+- Keep using AI tools on TaskFlow, but keep the teaching protocol: the design and the review stay mine.
+- Record each case where AI-generated or AI-suggested code was wrong and how a test or review caught it.
+  The 2026-08-01 auth defects are the first entries.
+- Write a short `docs/ai-workflow.md` in the backend repository: which tasks are delegated, which are
+  never delegated (security decisions, migrations), and how output is verified.
 
 ---
 
@@ -636,6 +699,17 @@ For each pattern:
 - Can explain cache consistency trade-offs.
 - Can demonstrate performance improvement with measurements.
 
+### Oracle for banking targets
+
+Added 2026-10-17. Only when applying to banks or finance companies, which dominate Java hiring in Hanoi.
+Most of this phase transfers directly; learn the differences rather than a second database.
+
+- Sequences and identity columns versus PostgreSQL `IDENTITY`.
+- Oracle execution plans (`EXPLAIN PLAN`, `DBMS_XPLAN`) compared with `EXPLAIN ANALYZE`.
+- Basic PL/SQL: procedures, functions, cursors, and exception blocks.
+- Pagination syntax and `ROWNUM` pitfalls.
+- Run Oracle Free in a container and point one Testcontainers test at it.
+
 ---
 
 ## Phase 7 — Background Jobs, Messaging, and Notifications
@@ -650,6 +724,20 @@ For each pattern:
 - RabbitMQ or Kafka when messaging requirements appear.
 - WebSocket or Server-Sent Events for realtime updates.
 - Email provider abstraction.
+
+### Planned Kafka use case
+
+Added 2026-10-17. Kafka moves from "when needed" to planned, because it is the messaging system named
+most often in middle-level postings. Keep it to one use case so it stays defensible in an interview.
+
+- Task assigned → `task-events` topic → notification consumer.
+- Transactional outbox, so a rolled-back assignment never publishes an event.
+- Idempotent consumer keyed on event ID.
+- Retry with a dead-letter topic.
+- Testcontainers Kafka integration test that proves a duplicate delivery is ignored.
+
+Spring application events remain the default for in-process side effects. Kafka is justified here by
+retry and delivery semantics, not by the number of services.
 
 ### TaskFlow features
 
@@ -695,6 +783,10 @@ Use messaging when:
 ## Phase 8 — Docker, CI/CD, Deployment, and Observability
 
 **Goal:** Own the path from commit to running application.
+
+Changed 2026-10-17: Docker Compose, a CI pipeline running the backend tests, and structured logging
+with a correlation ID are pulled forward into Stage A. Every sampled middle-level posting treats them as
+baseline. The rest of this phase keeps its position.
 
 ### Docker
 
@@ -751,6 +843,20 @@ Study:
 - Secrets Manager or Parameter Store.
 
 Use the AWS Free Tier carefully and set billing alarms.
+
+### Minimal Kubernetes
+
+Added 2026-10-17. Required at middle level by ST Engineering, CEVA and Goline. Start only after the
+Docker image and CI pipeline are stable.
+
+- Local cluster with kind or k3d. No managed cloud cluster.
+- Deployment, Service, ConfigMap, and Secret for the backend.
+- PostgreSQL either in-cluster for learning or external, with the trade-off written down.
+- Liveness and readiness probes wired to Spring Boot Actuator.
+- Rolling update and rollback of one version.
+
+Exit check: explain what happens to in-flight requests during a rolling update, and why readiness and
+liveness probes must differ.
 
 ### Observability
 
@@ -812,7 +918,8 @@ Use the AWS Free Tier carefully and set billing alarms.
 ### What not to prioritize yet
 
 - Building microservices just to learn microservices.
-- Kubernetes before Docker and CI/CD are comfortable.
+- Kubernetes before Docker and CI/CD are comfortable. Minimal Kubernetes is scheduled in Phase 8 once
+  they are (2026-10-17).
 - Complex distributed consistency algorithms without a project need.
 - Memorizing architecture diagrams without implementing the underlying ideas.
 
@@ -838,6 +945,12 @@ Use the AWS Free Tier carefully and set billing alarms.
 - Roadmap.
 - Meaningful Git history.
 - Pull requests showing review and refactoring.
+- `docs/ai-workflow.md` with real cases where review or tests caught a wrong suggestion. Added
+  2026-10-17.
+
+Priority note added 2026-10-17: with about two years of experience at application time, a deployed and
+tested TaskFlow is what compensates for the missing year. Deploy the core before extending Stage B with
+comments and attachments.
 
 ### Interview preparation
 
@@ -860,6 +973,10 @@ Use the AWS Free Tier carefully and set billing alarms.
 - RxJS and Signals.
 - System-design basics.
 - Behavioral stories from TaskFlow and professional work.
+- Kafka delivery semantics and the outbox pattern. Added 2026-10-17.
+- Kubernetes basics: pods, services, probes, rolling updates. Added 2026-10-17.
+- Oracle differences from PostgreSQL, for banking interviews. Added 2026-10-17.
+- How AI tools are used and verified in daily work. Added 2026-10-17.
 
 Use TaskFlow examples rather than giving only textbook answers.
 
@@ -949,6 +1066,9 @@ This is progress-based rather than deadline-based. Exact duration depends on wor
 - Add backend integration tests.
 - Build Angular authentication.
 - Dockerize local development.
+- CI pipeline running `sh mvnw test` on every pull request. Added 2026-10-17.
+- Structured JSON logging with a correlation ID. Added 2026-10-17.
+- Close the gated auth backlog: hashed refresh tokens and reuse detection. Added 2026-10-17.
 
 ## Stage B — Core product
 
@@ -968,6 +1088,7 @@ This is progress-based rather than deadline-based. Exact duration depends on wor
 - Performance review.
 - Security review.
 - End-to-end tests.
+- Minimal Kubernetes on a local cluster. Added 2026-10-17.
 
 ## Stage D — Advanced features
 
@@ -975,7 +1096,7 @@ This is progress-based rather than deadline-based. Exact duration depends on wor
 - Realtime updates.
 - Scheduled reminders.
 - Redis.
-- Messaging.
+- Messaging: the planned Kafka use case from Phase 7 (2026-10-17).
 - Batch exports/imports.
 
 ## Stage E — Middle-level readiness
@@ -1038,6 +1159,12 @@ Practice explaining one topic in English:
 - Why integration test instead of unit test?
 - Why use or avoid Redis?
 - Why this Angular state design?
+
+Measurable target, added 2026-10-17. Weekly practice alone cannot be checked.
+
+- Once a month, record a ten-minute mock interview in English about one TaskFlow decision and listen
+  back for the same mistakes repeating.
+- Target TOEIC 700+, the bar LG CNS sets. Pick the test date at the next roadmap review.
 
 ---
 
@@ -1169,7 +1296,13 @@ backlog is gated rather than scheduled.
 
 ## Next milestone
 
-**Workspace vertical slice** — backend, tests and Angular screens together, per the Phase 4 workflow.
+Changed 2026-10-17 (v1.3): a foundation-hardening milestone now comes before the Workspace slice. The
+market check shows Docker, CI and auth depth are baseline at middle level, and each item is small.
+
+1. **Foundation hardening** — `docker-compose.yml`, a CI pipeline running the backend tests, structured
+   logging with a correlation ID, hashed refresh tokens, and refresh-token reuse detection. Each item
+   counts as done only when a test or a green CI run proves it.
+2. **Workspace vertical slice** — backend, tests and Angular screens together, per the Phase 4 workflow.
 
 ---
 
@@ -1196,18 +1329,25 @@ Update completed milestones, identify gaps, and recommend the next highest-value
 
 # 11. Current Recommendation
 
-Do not add more authentication features immediately.
+Updated 2026-10-17 (v1.3), after the market check in section 1.
+
+Do not add more authentication features such as password reset yet. Hardening the existing auth flow is
+different: it closes known defects and is asked about directly in interviews.
 
 The next work should be:
 
 ```text
-Authentication integration tests
-→ Angular authentication
-→ Workspace backend and tests
-→ Workspace frontend
+Angular authentication (current milestone)
+→ Foundation hardening: Docker Compose, CI, structured logging, refresh-token hashing and reuse detection
+→ Workspace backend, tests, and frontend
 → Project vertical slice
 → Task vertical slice
+→ Staging deployment, then minimal Kubernetes
+→ Kafka use case: task assigned → notification
 ```
+
+Running alongside, not as separate milestones: the AI-assisted development notes, the monthly English
+recording, and Oracle basics only if applying to banks.
 
 Testing and frontend development should now happen continuously alongside backend development.
 
