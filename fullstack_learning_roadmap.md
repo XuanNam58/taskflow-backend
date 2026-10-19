@@ -3,9 +3,9 @@
 **Owner:** Xuân Nam Đặng  
 **Target:** Middle Full-Stack Developer  
 **Primary stack:** Java, Spring Boot, PostgreSQL, Angular  
-**Roadmap version:** 1.3  
+**Roadmap version:** 1.4  
 **Created:** 2026-07-18  
-**Last reviewed:** 2026-10-17  
+**Last reviewed:** 2026-10-19  
 **Review cadence:** After each milestone or every 4 weeks
 
 ---
@@ -1230,18 +1230,30 @@ unnoticed.
 
 ## Done and proven by a test
 
-As of 2026-08-09: 10 tests across 3 integration-test classes, suite green.
+Backend, as of 2026-10-19: 14 tests across 2 integration-test classes, suite green.
 
 - Backend project setup.
 - PostgreSQL and Flyway foundation.
 - Testcontainers integration-test foundation — singleton container shared across all test classes.
 - User registration, including the duplicate-email conflict.
-- Login: rejects a disabled account, and returns both tokens for a valid one.
+- Login: rejects a disabled account; for a valid one returns the access token in the body and the
+  refresh token in a cookie.
 - JWT authentication filter: an expired access token returns `AUTH_003` at the correct path.
 - Refresh-token rotation: issues a new pair and revokes the old token.
 - Refresh by a disabled user is rejected **and rolls back**, leaving the old token usable.
 - Logout cannot revoke another user's refresh token.
 - Logout revokes the token, and reusing it afterwards fails.
+- Refresh token in an httpOnly cookie (`HttpOnly; Secure; SameSite=Strict; Path=/api/auth`), never in
+  a response body (PR #9, 2026-10-17). Refresh without the cookie returns `AUTH_004`; replaying a
+  rotated cookie returns `AUTH_006`; logout and logout-all clear the cookie with `Max-Age=0` on the same
+  path.
+- Postman collection `TaskFlow — Auth` passes end to end in the Collection Runner against the running
+  app, using the cookie jar the way a browser does (PR #10). The expired-token request is manual.
+
+Frontend (`taskflow-frontend`), as of 2026-10-19: 6 tests, suite green.
+
+- Login form with validation, calling `POST /api/auth/login` through the dev proxy.
+- An empty form does not call the API; `AUTH_001` shows the credentials error.
 
 ## Defects fixed in this milestone
 
@@ -1266,7 +1278,18 @@ Four of the six defects found on 2026-08-01 are closed, each with a test that fa
   `revokeAllByUserId`, no migration) or per-token-family (`family_id` column, needs a migration). Note
   that concurrent refresh from two browser tabs is normal and would trip naive detection, so a short
   grace window is likely needed.
+  Updated 2026-10-19: since PR #9 the cookie is shared by every tab, so this race is now real — two tabs
+  starting together, or a double F5, send the same cookie and the second request gets `AUTH_006`. The
+  grace window must ship in the same change as reuse detection, or a double F5 revokes every session.
 - `docker-compose.yml` — required by the Phase 1 exit criteria.
+
+**Known defect, small.** A missing or malformed JSON body throws `HttpMessageNotReadableException`,
+which falls through to the catch-all handler and returns `500 COMMON_001` instead of `400`. Found
+2026-10-14 while `/refresh` still required a body; `/login` and `/register` still have it. Add a handler
+in `GlobalExceptionHandler` with a test that sends `{`.
+
+**Accepted limitation (PR #9).** When `/logout` or `/refresh` fails, the error response does not clear
+the cookie, so a dead cookie stays until `Max-Age`. The next startup gets `401` and starts logged out.
 
 **Refactor, no deadline.** Confine jjwt to `JwtServiceImpl` using the Adapter pattern from Phase 5:
 `parseClaims` translates jjwt exceptions into `BusinessException` carrying an `ErrorCode`, so the filter
@@ -1274,22 +1297,38 @@ and the entry point stop importing `io.jsonwebtoken` and the fragile
 `getCause() instanceof ExpiredJwtException` check disappears. Chosen deliberately over the one-line fix
 that shipped, to keep the bug fix and the refactor in separate commits. Revisit when touching auth again.
 
+**Refactor, no deadline.** Since PR #9, `LoginResponse` and `RefreshTokenResponse` never leave the
+server: they carry the token pair from the service to the controller. Merge them into one internal
+record, for example `TokenPair` in `auth/dto/`, in its own `refactor` commit.
+
 **Still not started.** Password change, forgot/reset password, email verification, CI pipeline,
 OpenAPI documentation, structured logging with a correlation ID.
 
 ## Current milestone
 
-**Angular authentication** — starting 2026-08-10.
+**Angular authentication** — started 2026-08-10, re-planned 2026-10-19.
 
-The backend auth contract is stable and tested, so the frontend can be built against it:
-`401 AUTH_003` means refresh, `401 AUTH_002` means log out, `403 AUTH_007` means the account is disabled.
-None of the backlog items above change that contract.
+The backend auth contract is tested, so the frontend can be built against it. PR #9 changed its shape:
+`/login` and `/refresh` return only `{ accessToken }`, and the refresh token travels in an httpOnly
+cookie that `/refresh` and `/logout` read. The error codes did not change: `401 AUTH_003` means refresh,
+`401 AUTH_002` means log out, `403 AUTH_007` means the account is disabled. The backlog items above do
+not change the contract again.
 
-| Target | Scope |
-|---|---|
-| 10–16 Aug | angular.dev Essentials and the interactive tutorial. No TaskFlow code — a framework needs a structured backbone, not ad-hoc questions. |
-| 17–23 Aug | `taskflow-frontend` scaffold. Login page calling the real API, access token stored, one protected route reachable. |
-| 24–31 Aug | `AuthInterceptor`, `AuthGuard`, automatic refresh, current-user state, logout. |
+The August plan assumed three weeks. The cookie change was then inserted as its own slice, and the
+original dates slipped by about seven weeks.
+
+| Target | Scope | Status |
+|---|---|---|
+| 10–16 Aug | angular.dev Essentials and the interactive tutorial. | not recorded |
+| 17–23 Aug | `taskflow-frontend` scaffold, login page calling the real API. | done (6 tests, frontend PR #1, #2) |
+| 4–17 Oct | Refresh token moved to an httpOnly cookie, backend side. Spec `2026-10-04-auth-store-design.md`. | done (PR #9, #10) |
+| 20 Oct – 1 Nov | `AuthStore` with the access token in memory, session restore on startup, `authInterceptor` attaching the header, `Login` navigating, minimal `Home`. Plan `2026-10-18-auth-store-frontend.md`, 5 tasks, 14 frontend tests. | not started |
+| 2–15 Nov | Automatic refresh on `AUTH_003` with a single in-flight refresh, mapping of the other `AUTH_00x` codes, frontend logout, `authGuard`. Needs its own spec first. | not started |
+
+How these dates were set: the cookie slice — six tests plus a controller change — took 13 days from
+spec to merge (4 → 17 Oct), working part-time. The 20 Oct slice is about twice the code but has a
+written plan; the 2 Nov slice is harder (concurrent refresh) and has no spec yet. If a slice runs more
+than a week late, cut scope rather than move the date again.
 
 Priority note: joining an Angular project at work is the immediate goal, which is why the backend
 backlog is gated rather than scheduled.
@@ -1299,10 +1338,13 @@ backlog is gated rather than scheduled.
 Changed 2026-10-17 (v1.3): a foundation-hardening milestone now comes before the Workspace slice. The
 market check shows Docker, CI and auth depth are baseline at middle level, and each item is small.
 
-1. **Foundation hardening** — `docker-compose.yml`, a CI pipeline running the backend tests, structured
-   logging with a correlation ID, hashed refresh tokens, and refresh-token reuse detection. Each item
-   counts as done only when a test or a green CI run proves it.
-2. **Workspace vertical slice** — backend, tests and Angular screens together, per the Phase 4 workflow.
+1. **Foundation hardening**, target 16 Nov – 6 Dec — `docker-compose.yml`, a CI pipeline running the
+   backend tests, structured logging with a correlation ID, hashed refresh tokens, and refresh-token
+   reuse detection with its grace window. Each item counts as done only when a test or a green CI run
+   proves it. Order by size: Compose and CI first (a day or two each, and CI then guards everything
+   after it), reuse detection last (about a week, it needs a design decision).
+2. **Workspace vertical slice**, from 7 Dec — backend, tests and Angular screens together, per the
+   Phase 4 workflow.
 
 ---
 
