@@ -5,7 +5,7 @@
 **Primary stack:** Java, Spring Boot, PostgreSQL, Angular  
 **Roadmap version:** 1.4  
 **Created:** 2026-07-18  
-**Last reviewed:** 2026-10-19  
+**Last reviewed:** 2026-11-25  
 **Review cadence:** After each milestone or every 4 weeks
 
 ---
@@ -1251,10 +1251,16 @@ context-load test), suite green.
 - Postman collection `TaskFlow — Auth` passes end to end in the Collection Runner against the running
   app, using the cookie jar the way a browser does (PR #10). The expired-token request is manual.
 
-Frontend (`taskflow-frontend`), as of 2026-10-19: 6 tests, suite green.
+Frontend (`taskflow-frontend`), as of 2026-11-25: 15 tests across 6 spec files, suite green.
 
 - Login form with validation, calling `POST /api/auth/login` through the dev proxy.
 - An empty form does not call the API; `AUTH_001` shows the credentials error.
+- `AuthStore` keeps the access token in memory only; a failed `me()` after login or after a refresh
+  clears the token, and a failed session restore resolves instead of rejecting (frontend PR #3).
+- `authInterceptor` adds `Authorization: Bearer …` only when a token exists.
+- A successful login navigates to `/`.
+- Browser check, manual: reload keeps the session through `/refresh`, `document.cookie` cannot read
+  `refresh_token`, and the app still renders logged out when the backend is down.
 
 ## Defects fixed in this milestone
 
@@ -1323,7 +1329,7 @@ original dates slipped by about seven weeks.
 | 10–16 Aug | angular.dev Essentials and the interactive tutorial. | not recorded |
 | 17–23 Aug | `taskflow-frontend` scaffold, login page calling the real API. | done 29 Sep – 3 Oct (6 tests, frontend PR #1, #2) |
 | 4–17 Oct | Refresh token moved to an httpOnly cookie, backend side. Spec `2026-10-04-auth-store-design.md`. | done (PR #9, #10) |
-| 20 Oct – 1 Nov | `AuthStore` with the access token in memory, session restore on startup, `authInterceptor` attaching the header, `Login` navigating, minimal `Home`. Plan `2026-10-18-auth-store-frontend.md`, 5 tasks, 14 frontend tests. | not started |
+| 20 Oct – 1 Nov | `AuthStore` with the access token in memory, session restore on startup, `authInterceptor` attaching the header, `Login` navigating, minimal `Home`. Plan `2026-10-18-auth-store-frontend.md`, 5 tasks, 15 frontend tests. | done 10 – 25 Nov (15 tests, frontend PR #3) |
 | 2–15 Nov | Automatic refresh on `AUTH_003` with a single in-flight refresh, mapping of the other `AUTH_00x` codes, frontend logout, `authGuard`. Needs its own spec first. | not started |
 | 16–22 Nov | Register page calling `POST /api/auth/register`, with `USER_001` and `USER_002` shown on the right field. Required by the Phase 2 exit criteria; reuses the `Login` form and test patterns. | not started |
 
