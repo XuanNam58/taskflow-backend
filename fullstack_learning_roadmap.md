@@ -1330,13 +1330,18 @@ original dates slipped by about seven weeks.
 | 17–23 Aug | `taskflow-frontend` scaffold, login page calling the real API. | done 29 Sep – 3 Oct (6 tests, frontend PR #1, #2) |
 | 4–17 Oct | Refresh token moved to an httpOnly cookie, backend side. Spec `2026-10-04-auth-store-design.md`. | done (PR #9, #10) |
 | 20 Oct – 1 Nov | `AuthStore` with the access token in memory, session restore on startup, `authInterceptor` attaching the header, `Login` navigating, minimal `Home`. Plan `2026-10-18-auth-store-frontend.md`, 5 tasks, 15 frontend tests. | done 10 – 25 Nov (15 tests, frontend PR #3) |
-| 2–15 Nov | Automatic refresh on `AUTH_003` with a single in-flight refresh, mapping of the other `AUTH_00x` codes, frontend logout, `authGuard`. Needs its own spec first. | not started |
-| 16–22 Nov | Register page calling `POST /api/auth/register`, with `USER_001` and `USER_002` shown on the right field. Required by the Phase 2 exit criteria; reuses the `Login` form and test patterns. | not started |
+| 26 Nov – 9 Dec | Automatic refresh on `AUTH_003` with a single in-flight refresh, mapping of the other `AUTH_00x` codes, frontend logout, `authGuard`. Needs its own spec first. | not started |
+| 10–16 Dec | Register page calling `POST /api/auth/register`, with `USER_001` and `USER_002` shown on the right field. Required by the Phase 2 exit criteria; reuses the `Login` form and test patterns. | not started |
 
 How these dates were set: the cookie slice — six tests plus a controller change — took 13 days from
 spec to merge (4 → 17 Oct), working part-time. The 20 Oct slice is about twice the code but has a
-written plan; the 2 Nov slice is harder (concurrent refresh) and has no spec yet. If a slice runs more
+written plan; the refresh slice is harder (concurrent refresh) and has no spec yet. If a slice runs more
 than a week late, cut scope rather than move the date again.
+
+Moved 2026-11-25, against that rule: the `AuthStore` slice planned for 20 Oct – 1 Nov merged on 25 Nov,
+about 3.5 weeks late — no work from 19 Oct to 10 Nov, then 16 days to finish once started. Every later
+date shifted by the same amount instead of cutting scope. This is the last move: if the refresh slice
+is not merged by 16 Dec, cut it to `authGuard` plus logout and defer the single in-flight refresh.
 
 Priority note: joining an Angular project at work is the immediate goal, which is why the backend
 backlog is gated rather than scheduled.
@@ -1346,12 +1351,12 @@ backlog is gated rather than scheduled.
 Changed 2026-10-17 (v1.3): a foundation-hardening milestone now comes before the Workspace slice. The
 market check shows Docker, CI and auth depth are baseline at middle level, and each item is small.
 
-1. **Foundation hardening**, target 23 Nov – 13 Dec — `docker-compose.yml`, a CI pipeline running the
+1. **Foundation hardening**, target 17 Dec – 6 Jan — `docker-compose.yml`, a CI pipeline running the
    backend tests, structured logging with a correlation ID, hashed refresh tokens, and refresh-token
    reuse detection with its grace window. Each item counts as done only when a test or a green CI run
    proves it. Order by size: Compose and CI first (a day or two each, and CI then guards everything
    after it), reuse detection last (about a week, it needs a design decision).
-2. **Workspace vertical slice**, from 14 Dec — backend, tests and Angular screens together, per the
+2. **Workspace vertical slice**, from 7 Jan — backend, tests and Angular screens together, per the
    Phase 4 workflow.
 
 ---
